@@ -1,3 +1,6 @@
+environment {
+    KUBECONFIG = '/var/lib/jenkins/.kube/config'
+}
 pipeline {
     agent any
 
