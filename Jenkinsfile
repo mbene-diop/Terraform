@@ -24,6 +24,9 @@ pipeline {
 
         stage('Plan Terraform') {
             steps {
+                sh 'echo $KUBECONFIG'
+                sh 'ls -l $KUBECONFIG'
+                sh 'ls -l /var/lib/jenkins/.minikube/profiles/minikube'
                 sh 'terraform plan'
             }
         }
