@@ -219,3 +219,125 @@ resource "kubernetes_deployment" "backend" {
           }
         }
       }
+    }
+  }
+}
+
+# ---------------------------
+# Service Backend
+# ---------------------------
+resource "kubernetes_service" "backend_service" {
+  metadata {
+    name = "backend"
+  }
+
+  spec {
+    selector = {
+      app = "backend"
+    }
+
+    type = "NodePort"
+
+    port {
+      port        = 8000
+      target_port = 8000
+      node_port   = 30519
+    }
+  }
+}
+
+# ---------------------------
+# Déploiement Frontend
+# ---------------------------
+resource "kubernetes_deployment" "frontend" {
+  metadata {
+    name = "front-app"
+  }
+
+  wait_for_rollout        = true
+  rollout_timeout_seconds = 180
+
+  spec {
+    replicas = 2
+
+    selector {
+      match_labels = {
+        app = "front-app"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "front-app"
+        }
+      }
+
+      spec {
+        container {
+          name  = "frontend-container"
+          image = "nayoh/odc_monfront4"
+
+          port {
+            container_port = 80
+          }
+
+          image_pull_policy = "Always"
+
+          resources {
+            limits = {
+              memory = "256Mi"
+              cpu    = "500m"
+            }
+
+            requests = {
+              memory = "128Mi"
+              cpu    = "150m"
+            }
+          }
+
+          readiness_probe {
+            http_get {
+              path = "/"
+              port = 80
+            }
+            initial_delay_seconds = 5
+            period_seconds        = 5
+          }
+
+          liveness_probe {
+            http_get {
+              path = "/"
+              port = 80
+            }
+            initial_delay_seconds = 10
+            period_seconds        = 10
+          }
+        }
+      }
+    }
+  }
+}
+
+# ---------------------------
+# Service Frontend
+# ---------------------------
+resource "kubernetes_service" "frontend_service" {
+  metadata {
+    name = "front-service"
+  }
+
+  spec {
+    selector = {
+      app = "front-app"
+    }
+
+    type = "NodePort"
+
+    port {
+      port        = 80
+      target_port = 80
+      node_port   = 30517
+    }
+  }
+}
