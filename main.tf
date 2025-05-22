@@ -161,7 +161,7 @@ resource "kubernetes_deployment" "backend" {
       spec {
         container {
           name  = "backend"
-          image = "aicha037/backend2"
+          image = "nayoh/odc_monback"
 
           # Injection des variables d'environnement depuis le secret postgres
           env_from {
@@ -243,7 +243,7 @@ resource "kubernetes_deployment" "frontend" {
       spec {
         container {
           name  = "frontend-container"
-          image = "aicha037/front9:latest"
+          image = "nayoh/odc_monfront4"
 
           port {
             container_port = 80
