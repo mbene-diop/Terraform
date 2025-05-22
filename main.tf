@@ -1,4 +1,3 @@
-
 # ---------------------------
 # Secret pour PostgreSQL
 # ---------------------------
@@ -8,11 +7,10 @@ resource "kubernetes_secret" "postgres_secret" {
   }
 
   data = {
-  POSTGRES_USER     = var.postgres_user
-  POSTGRES_PASSWORD = var.postgres_password
-  POSTGRES_DB       = var.postgres_db
-}
-
+    POSTGRES_USER     = var.postgres_user
+    POSTGRES_PASSWORD = var.postgres_password
+    POSTGRES_DB       = var.postgres_db
+  }
 
   type = "Opaque"
 }
@@ -44,6 +42,9 @@ resource "kubernetes_deployment" "postgres" {
     name = "postgres"
   }
 
+  wait_for_rollout        = true
+  rollout_timeout_seconds = 180
+
   spec {
     replicas = 1
 
@@ -65,7 +66,6 @@ resource "kubernetes_deployment" "postgres" {
           name  = "postgres"
           image = "postgres:latest"
 
-          # Injection des variables d'environnement depuis le secret
           env_from {
             secret_ref {
               name = kubernetes_secret.postgres_secret.metadata[0].name
@@ -99,6 +99,16 @@ resource "kubernetes_deployment" "postgres" {
             }
             initial_delay_seconds = 5
             period_seconds        = 5
+          }
+
+          liveness_probe {
+            exec {
+              command = ["pg_isready", "-U", var.postgres_user]
+            }
+            initial_delay_seconds = 10
+            period_seconds        = 10
+            timeout_seconds       = 5
+            failure_threshold     = 6
           }
         }
 
@@ -142,6 +152,9 @@ resource "kubernetes_deployment" "backend" {
     name = "backend"
   }
 
+  wait_for_rollout        = true
+  rollout_timeout_seconds = 180
+
   spec {
     replicas = 1
 
@@ -163,7 +176,6 @@ resource "kubernetes_deployment" "backend" {
           name  = "backend"
           image = "nayoh/odc_monback"
 
-          # Injection des variables d'environnement depuis le secret postgres
           env_from {
             secret_ref {
               name = kubernetes_secret.postgres_secret.metadata[0].name
@@ -187,106 +199,23 @@ resource "kubernetes_deployment" "backend" {
               cpu    = "150m"
             }
           }
-        }
-      }
-    }
-  }
-}
 
-# ---------------------------
-# Service Backend
-# ---------------------------
-resource "kubernetes_service" "backend_service" {
-  metadata {
-    name = "backend"
-  }
-
-  spec {
-    selector = {
-      app = "backend"
-    }
-
-    type = "NodePort"
-
-    port {
-      port        = 8000
-      target_port = 8000
-      node_port   = 30519
-    }
-  }
-}
-
-# ---------------------------
-# Déploiement Frontend
-# ---------------------------
-resource "kubernetes_deployment" "frontend" {
-  metadata {
-    name = "front-app"
-  }
-
-  spec {
-    replicas = 2
-
-    selector {
-      match_labels = {
-        app = "front-app"
-      }
-    }
-
-    template {
-      metadata {
-        labels = {
-          app = "front-app"
-        }
-      }
-
-      spec {
-        container {
-          name  = "frontend-container"
-          image = "nayoh/odc_monfront4"
-
-          port {
-            container_port = 80
+          readiness_probe {
+            http_get {
+              path = "/"
+              port = 8000
+            }
+            initial_delay_seconds = 5
+            period_seconds        = 5
           }
 
-          image_pull_policy = "Always"
-
-          resources {
-            limits = {
-              memory = "256Mi"
-              cpu    = "500m"
+          liveness_probe {
+            http_get {
+              path = "/"
+              port = 8000
             }
-
-            requests = {
-              memory = "128Mi"
-              cpu    = "150m"
-            }
+            initial_delay_seconds = 10
+            period_seconds        = 10
           }
         }
       }
-    }
-  }
-}
-
-# ---------------------------
-# Service Frontend
-# ---------------------------
-resource "kubernetes_service" "frontend_service" {
-  metadata {
-    name = "front-service"
-  }
-
-  spec {
-    selector = {
-      app = "front-app"
-    }
-
-    type = "NodePort"
-
-    port {
-      port        = 80
-      target_port = 80
-      node_port   = 30517
-    }
-  }
-}
