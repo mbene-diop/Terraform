@@ -43,7 +43,7 @@ resource "kubernetes_deployment" "postgres" {
   }
 
   wait_for_rollout        = true
-  rollout_timeout_seconds = 180
+ 
 
   spec {
     replicas = 1
@@ -153,7 +153,7 @@ resource "kubernetes_deployment" "backend" {
   }
 
   wait_for_rollout        = true
-  rollout_timeout_seconds = 180
+  
 
   spec {
     replicas = 1
@@ -255,7 +255,7 @@ resource "kubernetes_deployment" "frontend" {
   }
 
   wait_for_rollout        = true
-  rollout_timeout_seconds = 180
+  
 
   spec {
     replicas = 2
