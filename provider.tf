@@ -8,5 +8,5 @@ terraform {
 }
 
 provider "kubernetes" {
-  config_path = "C:/Users/hp/.kube/config"
+  config_path = "/home/do/.kube/config"
 }
