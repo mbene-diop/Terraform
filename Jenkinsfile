@@ -1,11 +1,12 @@
-environment {
-    KUBECONFIG = '/var/lib/jenkins/.kube/config'
-}
 pipeline {
     agent any
 
+    environment {
+        KUBECONFIG = '/var/lib/jenkins/.kube/config'
+    }
+
     tools {
-        terraform 'MonProjet'  // Le nom  donné dans Jenkins pour Terraform
+        terraform 'MonProjet'  // Le nom donné dans Jenkins pour Terraform
     }
 
     stages {
